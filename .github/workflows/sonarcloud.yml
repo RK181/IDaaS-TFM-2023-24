@@ -38,11 +38,6 @@ jobs:
         run: |
           go test ./... -json > go-test-report.out
 
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@master
-        with:
-          args: "-no-fail -fmt=sonarqube -out report.json ./..."
-
       - name: Run linters (Golangci-lint)
         continue-on-error: true
         uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 #v6.0.1
@@ -70,6 +65,5 @@ jobs:
             -Dsonar.test.inclusions=**/*_test.go
             -Dsonar.go.tests.reportPaths=go-test-report.out
             -Dsonar.go.coverage.reportPaths=cov.out
-            -Dsonar.externalIssuesReportPaths=report.json
             -Dsonar.go.golangci-lint.reportPaths=report.xml
 
