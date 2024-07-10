@@ -1,0 +1,75 @@
+name: SonarCloud analysis
+
+# Revoke default permissions and grant what's needed in each job.
+permissions: {}
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master", "develop", "release-*", "hotfix-*" ]
+  schedule:
+    - cron: '0 4 * * 1' # Run on default branch "master" every Monday at 4:00 UTC 
+
+jobs:
+  Analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write 
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  #v4.1.7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7  #v5.0.1
+        with:
+          go-version: 1.22
+          check-latest: true
+
+      - name: Run unit Tests Coverage
+        run: |
+          go test -coverprofile=./cov.out ./...
+
+      - name: Run unit Tests Report
+        run: |
+          go test ./... -json > go-test-report.out
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: "-no-fail -fmt=sonarqube -out report.json ./..."
+
+      - name: Run linters (Golangci-lint)
+        continue-on-error: true
+        uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 #v6.0.1
+        with:
+          version: v1.59.1
+          # The installation mode `goinstall` always uses `CGO_ENABLED=1`.
+          install-mode: goinstall
+          args: "--timeout=10m --out-format checkstyle > report.xml"
+
+      - name: Analyze with SonarCloud
+        # You can pin the exact commit or the version.
+        # uses: SonarSource/sonarcloud-github-action@v2.3.0
+        uses: SonarSource/sonarcloud-github-action@e44258b109568baa0df60ed515909fc6c72cba92 #v2.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io
+        with:
+          # Additional arguments for the SonarScanner CLI
+          
+          #  -Dsonar.organization=
+          #  -Dsonar.projectKey=
+          args: >
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/*_test.go
+            -Dsonar.tests=.
+            -Dsonar.test.inclusions=**/*_test.go
+            -Dsonar.go.tests.reportPaths=go-test-report.out
+            -Dsonar.go.coverage.reportPaths=cov.out
+            -Dsonar.externalIssuesReportPaths=report.json
+            -Dsonar.go.golangci-lint.reportPaths=report.xml
+

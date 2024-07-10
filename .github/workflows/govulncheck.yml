@@ -1,0 +1,42 @@
+name: govulncheck
+
+# Revoke default permissions and grant what's needed in each job.
+permissions: {}
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '**'
+      - '!**.md'
+  push:
+    paths:
+      - '**'
+      - '!**.md'
+    branches: [ "master", "develop", "release-*", "hotfix-*" ]
+  schedule:
+    - cron: '0 4 * * 1' # Run on default branch "master" every Monday at 4:00 UTC
+
+jobs:
+  Check:
+    runs-on: ubuntu-latest
+    permissions:
+      # Grant permission to read content.
+      contents: read
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332  #v4.1.7
+      with:
+        fetch-depth: 1
+        
+    - name: Set up Go
+      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7  #v5.0.1
+      with:
+        go-version: 1.22
+        check-latest: true
+
+    - name: Install latest from golang.org
+      run: go install golang.org/x/vuln/cmd/govulncheck@3740f5cb12a3f93b18dbe200c4bcb6256f8586e2 #v1.1.2
+
+    - name: Run govulncheck      
+      run: govulncheck -show=traces ./...

@@ -1,0 +1,41 @@
+name: Snyk Open Source
+
+# Revoke default permissions and grant what's needed in each job.
+permissions: {}
+
+on:
+  push:
+    branches: [ "master", "develop", "release-*", "hotfix-*" ]
+  schedule:
+    - cron: '0 4 * * 1' # Run on default branch "master" every Monday at 4:00 UTC
+    
+jobs:
+  Analysis:
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
+      - name: Run Snyk to check for open-source vulnerabilities
+        uses: snyk/actions/golang@b98d498629f1c368650224d6d212bf7dfa89e4bf # v0.4.0
+        continue-on-error: true # To make sure that SARIF upload gets called
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk.sarif
+          command: test # command checks projects for open-source vulnerabilities and license issues
+          
+      - name: Run Snyk monitor
+        uses: snyk/actions/golang@b98d498629f1c368650224d6d212bf7dfa89e4bf # v0.4.0
+        continue-on-error: true # To make sure that SARIF upload gets called
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor # send the results to snyk.io and continuously monitored for open-source vulnerabilities and license issues
+          
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@1b1aada464948af03b950897e5eb522f92603cc2 # v3.24.9
+        with:
+          sarif_file: snyk.sarif
