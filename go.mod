@@ -5,12 +5,14 @@ go 1.22.2
 require (
 	github.com/asdine/storm/v3 v3.2.1
 	github.com/google/uuid v1.6.0
+	github.com/pquerna/otp v1.4.0
 	github.com/zitadel/oidc/v3 v3.26.0
 	golang.org/x/crypto v0.25.0
 )
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.3 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
