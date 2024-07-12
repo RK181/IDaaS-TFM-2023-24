@@ -7,8 +7,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/gob"
 	"io"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/sha3"
@@ -251,4 +253,28 @@ func DecryptChaCha20(data, key []byte) (out []byte) {
 	chk(err)
 
 	return
+}
+
+func GenUniqueID() string {
+	return uuid.NewString()
+}
+
+func EncodeGob(v any) []byte {
+	var buf bytes.Buffer
+	encdr := gob.NewEncoder(&buf)
+
+	if err := encdr.Encode(v); err != nil {
+		panic(err)
+	}
+
+	return buf.Bytes()
+}
+
+func DecodeGob(b []byte, res any) {
+	buf := bytes.NewBuffer(b)
+	dcdr := gob.NewDecoder(buf)
+
+	if err := dcdr.Decode(res); err != nil {
+		panic(err)
+	}
 }
