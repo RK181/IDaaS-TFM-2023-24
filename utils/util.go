@@ -8,9 +8,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"image/png"
 	"io"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/sha3"
@@ -82,7 +86,7 @@ func Decode64(s string) []byte {
 	return b                                     // devolvemos los datos originales
 }
 
-// Tamaño recomendado, 16 byte == 128 bits, 32 byte == 256 bits, 64 byte == 562 bits para Sal y Token
+// Tamaño recomendado, 16 byte == 128 bits, 32 byte == 256 bits, 64 byte == 512 bits para Sal y Token
 func GenRandByteSlice(size int) []byte {
 	var byteSlice = make([]byte, size)
 
@@ -277,4 +281,66 @@ func DecodeGob(b []byte, res any) {
 	if err := dcdr.Decode(res); err != nil {
 		panic(err)
 	}
+}
+
+// GenerateTOTP genera un código de autenticación de dos factores
+//   - issuer: nombre de la organización que emite el código
+//   - accountName: nombre de la cuenta del usuario
+//
+// Returns clave secreta y código QR en formato base64
+//
+//	(Usa HMAC-SHA512, 6 dígitos y periodo de 30 segundos)
+func GenerateTOTP(issuer, accountName string) (totpSecret, imgBase64 string) {
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      issuer,
+		AccountName: accountName,
+		Secret:      GenRandByteSlice(32),
+		Algorithm:   otp.AlgorithmSHA512,
+		Digits:      otp.DigitsSix,
+		Period:      30,
+	})
+	chk(err)
+	// Convert TOTP key into a PNG
+	var buf bytes.Buffer
+	img, err := key.Image(160, 160)
+	chk(err)
+
+	err = png.Encode(&buf, img)
+	chk(err)
+
+	data := buf.Bytes()
+
+	//imgBase64 += "data:image/png;base64,"
+	return key.Secret(), Encode64(data)
+}
+
+// ValidateTOTP valida el código de autenticación de dos factores
+//   - passcode: código de autenticación
+//   - totpSecret: clave secreta
+//
+// (Usa HMAC-SHA512, 6 dígitos, periodo de 30 segundos y margen de error de 1)
+func ValidateTOTP(passcode string, totpSecret string) bool {
+	rv, err := totp.ValidateCustom(
+		passcode,
+		totpSecret,
+		time.Now().UTC(),
+		totp.ValidateOpts{
+			Period:    30,
+			Skew:      1,
+			Digits:    otp.DigitsSix,
+			Algorithm: otp.AlgorithmSHA512,
+		},
+	)
+	chk(err)
+	return rv
+}
+
+// GenerateCode creates a TOTP token using the current time.
+func GenerateCode(secret string) (string, error) {
+	return totp.GenerateCodeCustom(secret, time.Now().UTC(), totp.ValidateOpts{
+		Period:    30,
+		Skew:      1,
+		Digits:    otp.DigitsSix,
+		Algorithm: otp.AlgorithmSHA512,
+	})
 }

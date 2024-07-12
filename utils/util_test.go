@@ -102,3 +102,30 @@ func TestEncryptChaCha20AndDecryptChaCha20(t *testing.T) {
 		t.Errorf("Decryption failed. Expected %q, but got %q", string(data), string(decrypted))
 	}
 }
+func TestTOTP(t *testing.T) {
+	issuer := "MyOrganization"
+	accountName := "MyAccount"
+
+	totpSecret, imgBase64 := GenerateTOTP(issuer, accountName)
+
+	if len(totpSecret) == 0 {
+		t.Error("TOTP secret is empty")
+	}
+
+	if len(imgBase64) == 0 {
+		t.Error("Image base64 is empty")
+	}
+
+	code, err := GenerateCode(totpSecret)
+	if err != nil {
+		t.Errorf("Error generating TOTP code: %v", err)
+	}
+
+	if len(code) == 0 {
+		t.Error("TOTP code is empty")
+	}
+
+	if !ValidateTOTP(code, totpSecret) {
+		t.Error("TOTP code verification failed")
+	}
+}
