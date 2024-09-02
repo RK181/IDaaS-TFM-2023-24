@@ -5,8 +5,6 @@ import (
 	"module/utils"
 	"time"
 
-	"github.com/asdine/storm/v3/q"
-	"github.com/google/uuid"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 )
@@ -30,143 +28,64 @@ var _ op.Client = &Client{}
 // Client represents the storage model of an OAuth/OIDC client
 // it implements the op.Client interface
 type Client struct {
-	//id              int
-	clientID        string
-	userID          int
-	clientName      string
-	secret          []byte
-	salt            []byte
-	redirectURIs    []string // callback URLs
-	applicationType op.ApplicationType
-	authMethod      oidc.AuthMethod
-	loginURL        string
-	responseTypes   []oidc.ResponseType
-	grantTypes      []oidc.GrantType
-	accessTokenType op.AccessTokenType
-}
-
-type clientDB struct {
-	//ID         int    `storm:"id,increment"`
-	ClientID   string `storm:"id"`
-	UserID     int
-	ClientName string
-	Secret     []byte
-	Salt       []byte
-	Data       []byte
-}
-
-type clientDate struct {
-	RedirectURIs    []string
-	ApplicationType op.ApplicationType
-	AuthMethod      oidc.AuthMethod
-	LoginURL        string
-	ResponseTypes   []oidc.ResponseType
-	GrantTypes      []oidc.GrantType
-	AccessTokenType op.AccessTokenType
+	id                  int
+	clientID            string
+	userID              int
+	clientName          string
+	redirectURIs        []string           // callback URLs
+	applicationType     op.ApplicationType // int
+	authMethod          oidc.AuthMethod    // string
+	loginURL            string
+	responseTypes       []oidc.ResponseType // string
+	grantTypes          []oidc.GrantType    // string
+	accessTokenType     op.AccessTokenType  // int
+	accessTokenExpTime  int
+	refreshTokenExpTime int
 }
 
 // CreateNativeClient will create a client of type native, which will always use PKCE and allow the use of refresh tokens
 // user-defined redirectURIs may include:
 //   - http://localhost without port specification (e.g. http://localhost/auth/callback)
 //   - custom protocol (e.g. custom://auth/callback)
-func CreateNativeClient(userID int, clientName, secret string, redirectURIs []string) (*Client, error) {
+func CreateNativeClient(userID, accessTokenExpTime, refreshTokenExpTime int, clientName string, redirectURIs []string) (*Client, error) {
 	if len(redirectURIs) == 0 {
 		/*redirectURIs = []string{
 			"http://localhost/auth/callback",
 			"custom://auth/callback",
 		}*/
-		panic("redirectURIs must be provided")
+		//panic("redirectURIs must be provided")
+		return nil, errors.New("redirectURIs must be provided")
 	}
-
-	db, err := dbConnect()
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	/*err = db.Select(q.And(q.Eq("UserID", userID), q.Eq("ClientName", clientName))).First(&clientDB{})
-	if err == nil {
-		return nil, errors.New("client name already exists")
-	}*/
-
-	// generate new salt
-	salt := utils.GenRandByteSlice(16)
 
 	client := &Client{
-		clientID: uuid.NewString(),                            // generate a new clientID
-		salt:     salt,                                        // store the salt
-		secret:   utils.ApplyArgon2Salt([]byte(secret), salt), // salt and hash the secret
+		clientID: utils.GenUniqueIDv7(), // generate a new clientID
 
-		userID:          userID,
-		clientName:      clientName,
-		redirectURIs:    redirectURIs,
-		applicationType: op.ApplicationTypeNative,
-		authMethod:      oidc.AuthMethodNone,
-		loginURL:        defaultLoginURL,
-		responseTypes:   []oidc.ResponseType{oidc.ResponseTypeCode},
-		grantTypes:      []oidc.GrantType{oidc.GrantTypeCode, oidc.GrantTypeRefreshToken},
-		accessTokenType: op.AccessTokenTypeBearer,
-	}
-	// serialize the client data
-	clientDB := clientSerialize(client)
-
-	err = db.Save(clientDB)
-	if err != nil {
-		return nil, err
+		userID:              userID,
+		clientName:          clientName,
+		redirectURIs:        redirectURIs,
+		applicationType:     op.ApplicationTypeNative,
+		authMethod:          oidc.AuthMethodNone,
+		loginURL:            defaultLoginURL,
+		responseTypes:       []oidc.ResponseType{oidc.ResponseTypeCode},
+		grantTypes:          []oidc.GrantType{oidc.GrantTypeCode, oidc.GrantTypeRefreshToken},
+		accessTokenType:     op.AccessTokenTypeBearer,
+		accessTokenExpTime:  accessTokenExpTime,
+		refreshTokenExpTime: refreshTokenExpTime,
 	}
 
-	return clientDeserialize(clientDB), err
+	return client, nil
 }
 
-// CreateWebClient will create a client of type web, which will always use Basic Auth and allow the use of refresh tokens
-// user-defined redirectURIs may include:
-//   - http://localhost with port specification (e.g. http://localhost:9999/auth/callback)
-func CreateWebClient(userID int, clientName, secret string, redirectURIs []string) (*Client, error) {
-	if len(redirectURIs) == 0 {
-		/*redirectURIs = []string{
-			"http://localhost:9999/auth/callback",
-		}*/
-		panic("redirectURIs must be provided")
-	}
-	db, err := dbConnect()
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
+func (c *Client) SaveClient() error {
+	return saveClient(c)
+}
 
-	/*err = db.Select(q.And(q.Eq("UserID", userID), q.Eq("ClientName", clientName))).First(&clientDB{})
-	if err == nil {
-		return nil, errors.New("client name already exists")
-	}*/
+func (c *Client) GetClient() error {
+	return getClient(c)
+}
 
-	// generate new salt
-	salt := utils.GenRandByteSlice(16)
-
-	client := &Client{
-		clientID: uuid.NewString(),                            // generate a new clientID
-		salt:     salt,                                        // store the salt
-		secret:   utils.ApplyArgon2Salt([]byte(secret), salt), // salt and hash the secret
-
-		userID:          userID,
-		clientName:      clientName,
-		redirectURIs:    redirectURIs,
-		applicationType: op.ApplicationTypeWeb,
-		authMethod:      oidc.AuthMethodBasic,
-		loginURL:        defaultLoginURL,
-		responseTypes:   []oidc.ResponseType{oidc.ResponseTypeCode, oidc.ResponseTypeIDTokenOnly, oidc.ResponseTypeIDToken},
-		grantTypes:      []oidc.GrantType{oidc.GrantTypeCode, oidc.GrantTypeRefreshToken, oidc.GrantTypeTokenExchange},
-		accessTokenType: op.AccessTokenTypeBearer,
-	}
-
-	// serialize the client data
-	clientDB := clientSerialize(client)
-
-	err = db.Save(clientDB)
-	if err != nil {
-		return nil, err
-	}
-
-	return clientDeserialize(clientDB), err
+func (c *Client) DeleteClient() error {
+	return deleteClient(c)
 }
 
 // GetID must return the client_id
@@ -278,171 +197,3 @@ func GetClientByID(id string) (*Client, error) {
 	return clientDeserialize(&clientDB), nil
 }
 */
-
-func GetClientByClientID(clientID string) (*Client, error) {
-	db, err := dbConnect()
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	var clientDB clientDB
-	err = db.One("ClientID", clientID, &clientDB)
-	if err != nil {
-		return nil, err
-	}
-
-	return clientDeserialize(&clientDB), nil
-}
-
-// GetClientByClientName retrieves a client from the storage by its client name
-func GetClientsByUserID(userID int) ([]Client, error) {
-	db, err := dbConnect()
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	var clientsDB []clientDB
-	err = db.Select(q.Eq("UserID", userID)).Find(&clientsDB)
-	if err != nil {
-		return nil, err
-	}
-
-	return clientDeserializeSlice(clientsDB), nil
-}
-
-// GetClientByClientIDAndSecret retrieves a client from the storage by its client name and secret
-//
-//   - if the client name exists but the secret is incorrect, return an error
-func GetClientByClientIDAndSecret(clientID, secret string) (*Client, error) {
-	db, err := dbConnect()
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	var clientDB clientDB
-	err = db.One("ClientID", clientID, &clientDB)
-	if err != nil {
-		return nil, err
-	}
-
-	if !utils.CheckArgon2Salt(clientDB.Secret, clientDB.Salt, utils.Decode64(secret)) {
-		return nil, errors.New("invalid secret")
-	}
-
-	client := clientDeserialize(&clientDB)
-
-	return client, nil
-}
-
-// UpdateClient updates an existing client in the storage
-func UpdateClient(client *Client) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// serialize the client data
-	clientDB := clientSerialize(client)
-
-	return db.Update(clientDB)
-}
-
-// DeleteClient deletes a client from the storage
-func DeleteClient(client *Client) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	clientDB := &clientDB{
-		ClientID: client.clientID,
-	}
-
-	/*if clientDB.ID == 0 {
-		err = db.One("ClientID", client.clientID, clientDB)
-		if err != nil {
-			return err
-		}
-		return db.DeleteStruct(clientDB)
-	}*/
-
-	return db.DeleteStruct(clientDB)
-}
-
-// clientSerialize serializes the client data for the database
-//
-//	returns a clientDB object
-func clientSerialize(client *Client) *clientDB {
-	var data = utils.EncodeGob(clientDate{
-		RedirectURIs:    client.redirectURIs,
-		ApplicationType: client.applicationType,
-		AuthMethod:      client.authMethod,
-		LoginURL:        client.loginURL,
-		ResponseTypes:   client.responseTypes,
-		GrantTypes:      client.grantTypes,
-		AccessTokenType: client.accessTokenType,
-	})
-
-	return &clientDB{
-		ClientID:   client.clientID,
-		ClientName: client.clientName,
-		UserID:     client.userID,
-		Secret:     client.secret,
-		Salt:       client.salt,
-		Data:       data,
-	}
-}
-
-// clientDeserialize deserializes the client data from the database
-//
-//	returns a Client object
-func clientDeserialize(clientDB *clientDB) *Client {
-	var data clientDate
-	utils.DecodeGob(clientDB.Data, &data)
-
-	return &Client{
-		//id:              clientDB.ID,
-		clientID:        clientDB.ClientID,
-		clientName:      clientDB.ClientName,
-		secret:          clientDB.Secret,
-		salt:            clientDB.Salt,
-		redirectURIs:    data.RedirectURIs,
-		applicationType: data.ApplicationType,
-		authMethod:      data.AuthMethod,
-		loginURL:        data.LoginURL,
-		responseTypes:   data.ResponseTypes,
-		grantTypes:      data.GrantTypes,
-		accessTokenType: data.AccessTokenType,
-	}
-}
-
-func clientDeserializeSlice(clientsDB []clientDB) []Client {
-	var clients []Client
-	var data clientDate
-
-	for _, clientDB := range clientsDB {
-		utils.DecodeGob(clientDB.Data, &data)
-		client := Client{
-			//id:              clientDB.ID,
-			clientID:        clientDB.ClientID,
-			clientName:      clientDB.ClientName,
-			secret:          clientDB.Secret,
-			salt:            clientDB.Salt,
-			redirectURIs:    data.RedirectURIs,
-			applicationType: data.ApplicationType,
-			authMethod:      data.AuthMethod,
-			loginURL:        data.LoginURL,
-			responseTypes:   data.ResponseTypes,
-			grantTypes:      data.GrantTypes,
-			accessTokenType: data.AccessTokenType,
-		}
-		clients = append(clients, client)
-	}
-
-	return clients
-}

@@ -20,9 +20,25 @@ func InitDatabase() (err error) {
 	}
 	defer bolt.Close()
 	// Inicializamos las estructuras de datos
-	bolt.Init(&User{})
-	bolt.Init(&clientDB{})
-	//bolt.Init(&AccessToken{})
+	err = bolt.Init(&User{})
+	if err != nil {
+		return err
+	}
+
+	err = bolt.Init(&clientDB{})
+	if err != nil {
+		return err
+	}
+
+	err = bolt.Init(&accessTokenDB{})
+	if err != nil {
+		return err
+	}
+
+	err = bolt.Init(&refreshTokenDB{})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
