@@ -1,0 +1,34 @@
+{{template "main" .}}
+{{ define "title" }} Register {{end}}
+{{ define "content" }}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <form>
+                        <h1 class="h3 mb-3 fw-normal text-center">Two Factor Authentication (2FA)</h1>
+                        <hr>   
+                        <div class="row">
+                            <div class="col mb-3">
+                                <label for="firstname" class="form-label">Enter the authentication code</label>
+                                <input type="text" class="form-control" id="firstname" placeholder="">
+                            </div>
+                        </div>
+                    <hr>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <button class="btn btn-primary w-100 py-2" type="submit">Submit</button>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <a class="btn btn-outline-danger w-100" href="/login">Cancel</a>
+                            </div>
+                        </div>
+                        
+                      </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,37 @@
+{{template "main" .}}
+{{ define "title" }} Register {{end}}
+{{ define "content" }}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <form>
+                        <h1 class="h3 mb-3 fw-normal text-center">Authorize the request</h1>
+                        <hr>   
+                        <p  class="form-label">Client wanth to access the following information:</p>
+                        <hr>
+                        <div class="row">
+                            
+                            
+                            <div class="col-md-3"><h6 class="mb-0">Scopes</h6></div>
+                            <div class="col-md-9 text-secondary">openid, profile, email</div>
+                        </div>
+                        
+                    <hr>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <button class="btn btn-warning w-100 py-2" type="submit">Consent</button>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <a class="btn btn-outline-danger w-100" href="/login">Cancel</a>
+                            </div>
+                        </div>
+                        
+                      </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

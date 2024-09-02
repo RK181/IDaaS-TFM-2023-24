@@ -1,0 +1,63 @@
+{{template "main" .}}
+{{ define "title" }} Register {{end}}
+{{ define "content" }}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <form>
+                        <h1 class="h3 mb-3 fw-normal text-center">Integrate Client</h1>
+                        <hr>   
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="username" placeholder="name@example.com">
+                            <label for="username">Client Name</label>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="validationCustom04" class="form-label">Access token format</label>
+                                <select class="form-select" id="validationCustom04" required>
+                                    <option selected value="">OPAQUE</option>
+                                    <option>JWT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="reverseCheck1" class="form-label">Allow refresh tokens</label>
+                                <select class="form-select" id="validationCustom04" required>
+                                    <option selected value="">No</option>
+                                    <option>Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstname" class="form-label">Access token expiration time (minutes)</label>
+                                <input type="number" class="form-control" id="firstname" placeholder="5">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastname" class="form-label">Refresh token expiration time (hours)</label>
+                                <input type="number" class="form-control" id="lastname" placeholder="5">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="validationTextarea" class="form-label">Callbacks to clients</label>
+                            <textarea class="form-control" id="validationTextarea" placeholder="https://example1.com,https://example2.es" required></textarea>
+                        </div>
+                    <hr>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <button class="btn btn-success w-100 py-2" type="submit">Create</button>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <a class="btn btn-outline-danger w-100" href="/login">Cancel</a>
+                            </div>
+                        </div>
+                        
+                      </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
