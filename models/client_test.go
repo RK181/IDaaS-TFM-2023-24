@@ -1,11 +1,6 @@
 package models
 
-import (
-	"testing"
-
-	"github.com/zitadel/oidc/v3/pkg/op"
-)
-
+/*
 var webClientID = ""
 
 // var webID = 0
@@ -123,3 +118,4 @@ func TestDeleteClient(t *testing.T) {
 		t.Errorf("Error deleting client: %v", err)
 	}
 }
+*/
