@@ -106,7 +106,7 @@ func CheckArgon2Salt(password, salt, passwordArgon2Salt []byte) bool {
 	return bytes.Equal(key, passwordArgon2Salt)
 }
 
-// Se pasa la LoginKey(Hash para login derivado de la contraseña) en claro, la Sal y aplica Argon2+Sal
+// Se pasa el LoginKey(Hash para login derivado de la contraseña) en claro, la Sal y aplica Argon2+Sal
 func ApplyArgon2Salt(password, salt []byte) []byte {
 	// Argon2 con parametros recomendados por defecto
 	key := argon2.IDKey(password, salt, 1, 64*1024, 4, 32)
@@ -261,6 +261,11 @@ func DecryptChaCha20(data, key []byte) (out []byte) {
 
 func GenUniqueID() string {
 	return uuid.NewString()
+}
+
+func GenUniqueIDv7() string {
+	id, _ := uuid.NewV7()
+	return id.String()
 }
 
 func EncodeGob(v any) []byte {

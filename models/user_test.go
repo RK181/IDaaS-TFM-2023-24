@@ -1,141 +1,173 @@
 package models
 
 import (
-	"testing"
-
 	"module/utils"
+	"testing"
+	"time"
 )
 
-func TestCreateUser(t *testing.T) {
-	user := User{
-		Username:  "testuser",
-		Password:  []byte("password123"),
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "test@example.com",
-	}
+func userEqual(user, want *User) bool {
+	return user.Username == want.Username &&
+		user.FirstName == want.FirstName &&
+		user.LastName == want.LastName &&
+		user.TotpSecret == want.TotpSecret &&
+		user.HaveTotp == want.HaveTotp &&
+		user.Email == want.Email &&
+		user.EmailVerified == want.EmailVerified &&
+		user.CreatedAt == want.CreatedAt &&
+		user.Password != nil &&
+		user.Salt != nil
+}
 
-	err := CreateUser(&user)
-	if err != nil {
-		t.Errorf("Failed to create user: %v", err)
+func TestNewUser(t *testing.T) {
+	type args struct {
+		username  string
+		firstName string
+		lastName  string
+		password  string
+		email     string
 	}
-
-	// Verify that the user is saved in the database
-	createdUser, err := GetUserByID(user.ID)
-	if err != nil {
-		t.Errorf("Failed to retrieve created user: %v", err)
+	tests := []struct {
+		name string
+		args args
+		want *User
+	}{
+		// TODO: Add test cases.
+		{
+			name: "TestNewUser",
+			args: args{
+				username:  "username",
+				firstName: "firstName",
+				lastName:  "lastName",
+				password:  "password",
+				email:     "test@email.com",
+			},
+			want: &User{
+				Username:      "username",
+				FirstName:     "firstName",
+				LastName:      "lastName",
+				TotpSecret:    "",
+				HaveTotp:      false,
+				Email:         "test@email.com",
+				EmailVerified: false,
+				CreatedAt:     time.Now().UTC().Unix(),
+			},
+		},
 	}
-
-	// Verify the user's properties
-	if createdUser.Username != user.Username {
-		t.Errorf("Expected username %q, but got %q", user.Username, createdUser.Username)
-	}
-	if !utils.CheckArgon2Salt([]byte("password123"), createdUser.Salt, createdUser.Password) {
-		t.Errorf("Password verification failed")
-	}
-	if createdUser.FirstName != user.FirstName {
-		t.Errorf("Expected first name %q, but got %q", user.FirstName, createdUser.FirstName)
-	}
-	if createdUser.LastName != user.LastName {
-		t.Errorf("Expected last name %q, but got %q", user.LastName, createdUser.LastName)
-	}
-	if createdUser.Email != user.Email {
-		t.Errorf("Expected email %q, but got %q", user.Email, createdUser.Email)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewUser(tt.args.username, tt.args.firstName, tt.args.lastName, tt.args.password, tt.args.email); !userEqual(got, tt.want) {
+				t.Errorf("NewUser() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
 
-func TestGetUserByEmail(t *testing.T) {
-	email := "test@example.com"
-
-	user, err := GetUserByEmail(email)
+func TestUser_SaveUser(t *testing.T) {
+	u := NewUser("username", "firstName", "lastName", "password", "test@email.com")
+	err := u.SaveUser()
 	if err != nil {
-		t.Errorf("Failed to retrieve user by email: %v", err)
+		t.Errorf("SaveUser() error = %v", err)
 	}
 
-	// Verify the user's email
-	if user.Email != email {
-		t.Errorf("Expected email %q, but got %q", email, user.Email)
+	if u.Username != "username" || u.FirstName != "firstName" || u.LastName != "lastName" {
+		t.Errorf("SaveUser() failed")
+	}
+
+	if !utils.CheckArgon2Salt(utils.Hash512([]byte("password")), u.Salt, u.Password) {
+		t.Errorf("SaveUser() failed, expected password and salt")
 	}
 }
 
-func TestGetUserByID(t *testing.T) {
-	email := "test@example.com"
-
-	user, err := GetUserByEmail(email)
+func TestUser_GetUserByEmail(t *testing.T) {
+	u := &User{}
+	err := u.GetUserByEmail("test@email.com")
 	if err != nil {
-		t.Errorf("Failed to retrieve user by Email: %v", err)
+		t.Errorf("GetUserByEmail() error = %v", err)
+	}
+	if u.Username != "username" || u.FirstName != "firstName" || u.LastName != "lastName" {
+		t.Errorf("GetUserByEmail() failed")
 	}
 
-	// Verify the user's ID
-	if user.Email != email {
-		t.Errorf("Expected Email %s, but got %s", email, user.Email)
+	if !utils.CheckArgon2Salt(utils.Hash512([]byte("password")), u.Salt, u.Password) {
+		t.Errorf("GetUserByEmail() failed, expected password and salt")
 	}
 }
 
-func TestGetUserByName(t *testing.T) {
-	username := "testuser"
+func TestUser_UpdateUserInfo(t *testing.T) {
+	u := &User{}
 
-	user, err := GetUserByName(username)
+	err := u.GetUserByEmail("test@email.com")
 	if err != nil {
-		t.Errorf("Failed to retrieve user by username: %v", err)
+		t.Errorf("GetUserByEmail() error = %v", err)
 	}
 
-	// Verify the user's username
-	if user.Username != username {
-		t.Errorf("Expected username %q, but got %q", username, user.Username)
+	err = u.UpdateUserInfo("newUsername", "newFirstName", "newLastName")
+	if err != nil {
+		t.Errorf("UpdateUserInfo() error = %v", err)
+	}
+
+	if u.Username != "newUsername" || u.FirstName != "newFirstName" || u.LastName != "newLastName" {
+		t.Errorf("UpdateUserInfo() failed, expected updated user info")
 	}
 }
-
-func TestUpdateUser(t *testing.T) {
-	user := &User{
-		Username:  "testuser",
-		FirstName: "Updated",
-		LastName:  "User",
-	}
-
-	// Retrieve the user by email
-	user, err := GetUserByName(user.Username)
+func TestUser_GetUserByName(t *testing.T) {
+	u := &User{}
+	err := u.GetUserByName("newUsername")
 	if err != nil {
-		t.Errorf("Failed to retrieve updated user: %v", err)
+		t.Errorf("GetUserByName() error = %v", err)
+	}
+	if u.Username != "newUsername" || u.FirstName != "newFirstName" || u.LastName != "newLastName" {
+		t.Errorf("GetUserByName() failed")
 	}
 
-	err = UpdateUser(user)
-	if err != nil {
-		t.Errorf("Failed to update user: %v", err)
-	}
-
-	// Verify that the user is updated in the database
-	updatedUser, err := GetUserByEmail(user.Email)
-	if err != nil {
-		t.Errorf("Failed to retrieve updated user: %v", err)
-	}
-
-	// Verify the user's updated properties
-	if updatedUser.FirstName != user.FirstName {
-		t.Errorf("Expected first name %q, but got %q", user.FirstName, updatedUser.FirstName)
-	}
-	if updatedUser.LastName != user.LastName {
-		t.Errorf("Expected last name %q, but got %q", user.LastName, updatedUser.LastName)
+	if !utils.CheckArgon2Salt(utils.Hash512([]byte("password")), u.Salt, u.Password) {
+		t.Errorf("GetUserByName() failed, expected password and salt")
 	}
 }
+func TestUser_UpdateTOTP(t *testing.T) {
+	u := &User{}
+	u.GetUserByName("newUsername")
 
-func TestDeleteUser(t *testing.T) {
-	user, err := GetUserByEmail("test@example.com")
+	totpSecret := "testTOTPSecret"
+
+	err := u.UpdateTOTP(totpSecret)
 	if err != nil {
-		t.Errorf("Failed to retrieve user by Email: %v", err)
+		t.Errorf("UpdateTOTP() error = %v", err)
 	}
 
-	err = DeleteUser(user)
-	if err != nil {
-		t.Errorf("Failed to delete user: %v", err)
+	if u.TotpSecret != totpSecret {
+		t.Errorf("UpdateTOTP() failed, expected TotpSecret = %s, got TotpSecret = %s", totpSecret, u.TotpSecret)
 	}
 
-	// Verify that the user is deleted from the database
-	deletedUser, err := GetUserByID(user.ID)
+	if !u.HaveTotp {
+		t.Errorf("UpdateTOTP() failed, expected HaveTotp = true, got HaveTotp = false")
+	}
+}
+func TestUser_UpdateEmailVerified(t *testing.T) {
+	u := &User{}
+	u.GetUserByName("newUsername")
+
+	err := u.UpdateEmailVerified(true)
+	if err != nil {
+		t.Errorf("UpdateEmailVerified() error = %v", err)
+	}
+
+	if !u.EmailVerified {
+		t.Errorf("UpdateEmailVerified() failed, expected EmailVerified = true, got EmailVerified = false")
+	}
+}
+func TestUser_DeleteUser(t *testing.T) {
+	u := &User{}
+	u.GetUserByName("newUsername")
+
+	err := u.DeleteUser()
+	if err != nil {
+		t.Errorf("DeleteUser() error = %v", err)
+	}
+
+	err = u.GetUserByID(1)
 	if err == nil {
-		t.Errorf("Expected error when retrieving deleted user, but got nil")
-	}
-	if deletedUser != nil {
-		t.Errorf("Expected deleted user to be nil, but got %v", deletedUser)
+		t.Errorf("DeleteUser() error = %v", err)
 	}
 }
