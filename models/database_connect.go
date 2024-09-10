@@ -4,7 +4,7 @@ import (
 	"github.com/asdine/storm/v3"
 )
 
-const DATABASE_NAME = "bolt.db"
+const DATABASE_NAME = "./bolt.db"
 
 // Conecta a la base de datos
 func dbConnect() (db *storm.DB, err error) {

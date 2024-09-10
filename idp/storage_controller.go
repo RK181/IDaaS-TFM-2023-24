@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"log"
 	"module/models"
 	"module/utils"
 	"time"
@@ -131,7 +130,6 @@ func (s *Storage) CreateAuthRequest(ctx context.Context, authReq *oidc.AuthReque
 		return nil, err
 	}
 
-	log.Panicln("\n\n\n\n", request.ClientID, "\n\n\n\n")
 	// finally, return the request (which implements the AuthRequest interface of the OP
 	return request, nil
 }
@@ -441,17 +439,9 @@ func (s *Storage) SetUserinfoFromToken(ctx context.Context, userinfo *oidc.UserI
 	// and you have to specify a wildcard (*) origin, then you could also check here if the origin which called the userinfo endpoint here directly
 	// note that the origin can be empty (if called by a web client)
 	//
-	if origin != "" {
-		log.Println("\n\n\n origin", origin, "\n\n\n")
-		/*client, ok := s.clients[token.ApplicationID]
-		if !ok {
-			return fmt.Errorf("client not found")
-		}
-		if err := checkAllowedOrigins(client.allowedOrigins, origin); err != nil {
-			return err
-		}*/
-	}
-	log.Println("\n\n\n origin", origin, "\n\n\n")
+	/*if origin != "" {
+
+	}*/
 	return s.setUserinfo(ctx, userinfo, accesToken.Subject, accesToken.ClientID, accesToken.Scopes)
 }
 
