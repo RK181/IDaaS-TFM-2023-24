@@ -8,7 +8,7 @@ import (
 type refreshTokenDB struct {
 	ID       int    `storm:"id,increment"` // refresh token id
 	Token    string `storm:"unique"`       // refresh token
-	UserID   int    // user id
+	UserID   string // user id
 	ClientID string // client id
 
 	Data []byte // refreshTokenData
@@ -42,10 +42,10 @@ func getRefreshToken(refreshToken *RefreshToken) error {
 
 	var refreshTokenDB refreshTokenDB
 
-	if refreshToken.id != 0 {
-		err = db.One("ID", refreshToken.id, &refreshTokenDB)
+	if refreshToken.ID != 0 {
+		err = db.One("ID", refreshToken.ID, &refreshTokenDB)
 	} else {
-		err = db.One("Token", refreshToken.token, &refreshTokenDB)
+		err = db.One("Token", refreshToken.Token, &refreshTokenDB)
 	}
 
 	if err == nil {
@@ -62,8 +62,8 @@ func deleteRefreshToken(refreshToken *RefreshToken) error {
 	defer db.Close()
 
 	refreshTokenDB := &refreshTokenDB{
-		ID:    refreshToken.id,
-		Token: refreshToken.token,
+		ID:    refreshToken.ID,
+		Token: refreshToken.Token,
 	}
 
 	if refreshTokenDB.ID != 0 {
@@ -79,17 +79,17 @@ func deleteRefreshToken(refreshToken *RefreshToken) error {
 
 func refreshTokenSerialize(refreshToken *RefreshToken) *refreshTokenDB {
 	data := utils.EncodeGob(refreshTokenDataDB{
-		AuthTime:   refreshToken.authTime,
-		AMR:        refreshToken.amr,
-		Audience:   refreshToken.audience,
-		Expiration: refreshToken.expiration,
-		Scopes:     refreshToken.scopes,
+		AuthTime:   refreshToken.AuthTime,
+		AMR:        refreshToken.AMR,
+		Audience:   refreshToken.Audience,
+		Expiration: refreshToken.Expiration,
+		Scopes:     refreshToken.Scopes,
 	})
 	return &refreshTokenDB{
-		ID:       refreshToken.id,
-		Token:    refreshToken.token,
-		UserID:   refreshToken.userID,
-		ClientID: refreshToken.clientID,
+		ID:       refreshToken.ID,
+		Token:    refreshToken.Token,
+		UserID:   refreshToken.UserID,
+		ClientID: refreshToken.ClientID,
 		Data:     data,
 	}
 }
@@ -98,14 +98,14 @@ func refreshTokenDeserialize(refreshTokenDB *refreshTokenDB) *RefreshToken {
 	var data refreshTokenDataDB
 	utils.DecodeGob(refreshTokenDB.Data, &data)
 	return &RefreshToken{
-		id:         refreshTokenDB.ID,
-		token:      refreshTokenDB.Token,
-		userID:     refreshTokenDB.UserID,
-		clientID:   refreshTokenDB.ClientID,
-		authTime:   data.AuthTime,
-		amr:        data.AMR,
-		audience:   data.Audience,
-		expiration: data.Expiration,
-		scopes:     data.Scopes,
+		ID:         refreshTokenDB.ID,
+		Token:      refreshTokenDB.Token,
+		UserID:     refreshTokenDB.UserID,
+		ClientID:   refreshTokenDB.ClientID,
+		AuthTime:   data.AuthTime,
+		AMR:        data.AMR,
+		Audience:   data.Audience,
+		Expiration: data.Expiration,
+		Scopes:     data.Scopes,
 	}
 }

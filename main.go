@@ -6,11 +6,13 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"log/slog"
 	"module/globals"
 	"module/idp"
 	"module/models"
 	"module/webapp"
 	"net/http"
+	"os"
 )
 
 // Configuración de las rutas de las plantillas
@@ -60,9 +62,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	issuer := fmt.Sprintf("http://localhost%s/", globals.PORT)
+	storage := idp.NewStorage()
 
-	fmt.Println("Hello, World!")
-	router := loadRouter()
+	logger := slog.New(
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug,
+		}),
+	)
+	router := idp.SetupServer(issuer, storage, logger, false)
 
 	// Creamos un servidor
 	server := &http.Server{

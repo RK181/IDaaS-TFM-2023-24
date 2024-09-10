@@ -9,8 +9,8 @@ type accessTokenDB struct {
 	ID             int    `storm:"id,increment"` // access token id
 	TokenID        string `storm:"unique"`       // access token
 	ClientID       string // client id
-	RefreshTokenID int    // refresh token id
-	Subject        int    // user id
+	RefreshTokenID string // refresh token id
+	Subject        string // user id
 
 	Data []byte // accessTokenData
 }
