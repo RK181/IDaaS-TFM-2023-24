@@ -1,6 +1,7 @@
 package models
 
 import (
+	"module/globals/constants"
 	"module/utils"
 	"time"
 
@@ -19,7 +20,7 @@ const (
 
 const (
 	// we use the default login UI and pass the (auth request) id
-	defaultLoginURL = "/login"
+	defaultLoginURL = "/login/username"
 )
 
 var _ op.Client = &Client{}
@@ -76,15 +77,65 @@ func CreateNativeClient(userID, accessTokenExpTime, refreshTokenExpTime int, cli
 }
 
 func (c *Client) SaveClient() error {
-	return saveClient(c)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// serialize the client data
+	clientDB := clientSerialize(c)
+
+	return db.Save(clientDB)
 }
 
 func (c *Client) GetClient() error {
-	return getClient(c)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	clientDB := &clientDB{
+		ID:       c.id,
+		ClientID: c.clientID,
+	}
+
+	if clientDB.ID != 0 {
+		err = db.One("ID", clientDB.ID, clientDB)
+	} else {
+		err = db.One("ClientID", clientDB.ClientID, clientDB)
+	}
+
+	if err == nil {
+		*c = *clientDeserialize(clientDB)
+	}
+
+	return err
 }
 
 func (c *Client) DeleteClient() error {
-	return deleteClient(c)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	clientDB := &clientDB{
+		ID:       c.id,
+		ClientID: c.clientID,
+	}
+
+	if clientDB.ID != 0 {
+		return db.DeleteStruct(clientDB)
+	}
+
+	// Delete by clientID (alternative key)
+	err = db.One("ClientID", c.clientID, clientDB)
+	if err != nil {
+		return err
+	}
+	return db.DeleteStruct(clientDB)
 }
 
 // GetID must return the client_id
@@ -131,7 +182,7 @@ func (c Client) GrantTypes() []oidc.GrantType {
 // LoginURL will be called to redirect the user (agent) to the login UI
 // you could implement some logic here to redirect the users to different login UIs depending on the client
 func (c Client) LoginURL(id string) string {
-	return c.loginURL + "?authRequestID=" + id
+	return c.loginURL + "?" + constants.QUERY_AUTH_REQ_ID + "=" + id
 }
 
 // AccessTokenType must return the type of access token the client uses (Bearer (opaque) or JWT)

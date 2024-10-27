@@ -31,65 +31,6 @@ type authRequestData struct {
 	AuthTime      time.Time
 }
 
-// saveAuthRequest creates an auth request
-func saveAuthRequest(authRequest *AuthRequest) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	authRequestDB := authRequestSerialize(authRequest)
-	return db.Save(authRequestDB)
-}
-
-// getAuthRequest
-func getAuthRequest(authRequest *AuthRequest) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	var authRequestDB authRequestDB
-
-	if authRequest.ID != 0 {
-		err = db.One("ID", authRequest.ID, &authRequestDB)
-	} else {
-		err = db.One("RequestID", authRequest.RequestID, &authRequestDB)
-	}
-
-	if err == nil {
-		authRequest = authRequestDeserialize(&authRequestDB)
-	}
-	return err
-}
-
-// deleteAuthRequest deletes an auth request
-func deleteAuthRequest(authRequest *AuthRequest) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	authRequestDB := &authRequestDB{
-		ID:        authRequest.ID,
-		RequestID: authRequest.RequestID,
-	}
-
-	if authRequestDB.ID != 0 {
-		return db.DeleteStruct(authRequestDB)
-	}
-	// Delete by request id
-	err = db.One("RequestID", authRequestDB.RequestID, &authRequestDB)
-	if err != nil {
-		return err
-	}
-
-	return db.DeleteStruct(authRequestDB)
-}
-
 func authRequestSerialize(authRequest *AuthRequest) *authRequestDB {
 	var data = utils.EncodeGob(authRequestData{
 		CreationDate:  authRequest.CreationDate,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"module/globals"
+	"module/globals/constants"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -44,7 +45,7 @@ func (l *login) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// the oidc package will pass the id of the auth request as query parameter
 	// we will use this id through the login process and therefore pass it to the login page
-	renderLogin(w, r, r.FormValue("ID"), nil, l)
+	renderLogin(w, r, r.FormValue(constants.QUERY_AUTH_REQ_ID), nil, l)
 }
 
 func renderLogin(w http.ResponseWriter, r *http.Request, id string, err error, l *login) {

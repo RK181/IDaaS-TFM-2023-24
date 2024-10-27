@@ -22,61 +22,6 @@ type refreshTokenDataDB struct {
 	Scopes     []string  // scopes
 }
 
-func saveRefreshToken(refreshToken *RefreshToken) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	refreshTokenDB := refreshTokenSerialize(refreshToken)
-	return db.Save(refreshTokenDB)
-}
-
-func getRefreshToken(refreshToken *RefreshToken) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	var refreshTokenDB refreshTokenDB
-
-	if refreshToken.ID != 0 {
-		err = db.One("ID", refreshToken.ID, &refreshTokenDB)
-	} else {
-		err = db.One("Token", refreshToken.Token, &refreshTokenDB)
-	}
-
-	if err == nil {
-		refreshToken = refreshTokenDeserialize(&refreshTokenDB)
-	}
-	return err
-}
-
-func deleteRefreshToken(refreshToken *RefreshToken) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	refreshTokenDB := &refreshTokenDB{
-		ID:    refreshToken.ID,
-		Token: refreshToken.Token,
-	}
-
-	if refreshTokenDB.ID != 0 {
-		return db.DeleteStruct(refreshTokenDB)
-	}
-
-	err = db.One("Token", refreshTokenDB.Token, refreshTokenDB)
-	if err != nil {
-		return err
-	}
-	return db.DeleteStruct(refreshTokenDB)
-}
-
 func refreshTokenSerialize(refreshToken *RefreshToken) *refreshTokenDB {
 	data := utils.EncodeGob(refreshTokenDataDB{
 		AuthTime:   refreshToken.AuthTime,

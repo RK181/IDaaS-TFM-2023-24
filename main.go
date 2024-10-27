@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"module/globals"
+	"module/globals/constants"
 	"module/idp"
 	"module/models"
 	"module/webapp"
@@ -62,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	issuer := fmt.Sprintf("http://localhost%s/", globals.PORT)
+	issuer := fmt.Sprintf("http://localhost%s/", constants.PORT)
 	storage := idp.NewStorage()
 
 	logger := slog.New(
@@ -75,12 +76,12 @@ func main() {
 
 	// Creamos un servidor
 	server := &http.Server{
-		Addr:    globals.PORT, // Puerto en el que escucha el servidor
-		Handler: router,       // Registramos los middlewares
+		Addr:    constants.PORT, // Puerto en el que escucha el servidor
+		Handler: router,         // Registramos los middlewares
 	}
 
 	// Mostramos un mensaje en consola
-	log.Printf("Server is listening at %s ...\n", globals.BASE_URL+globals.PORT)
+	log.Printf("Server is listening at %s ...\n", constants.BASE_URL+constants.PORT)
 	log.Println("Press Ctrl + C to stop the server")
 
 	// Iniciamos el servidor

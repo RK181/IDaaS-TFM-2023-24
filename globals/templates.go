@@ -2,6 +2,7 @@ package globals
 
 import (
 	"html/template"
+	"module/globals/constants"
 	"module/models"
 	"net/http"
 )
@@ -15,7 +16,7 @@ func ReturnView(w http.ResponseWriter, r *http.Request, tmplName string, data ma
 	if data == nil {
 		data = make(map[string]interface{})
 	}
-	data["AuthUser"], data["isAuth"] = (r.Context().Value(AUTH_USER).(models.User))
+	data["AuthUser"], data["isAuth"] = (r.Context().Value(constants.AUTH_USER).(models.User))
 
 	tmpl := Templates[tmplName]
 	tmpl.Execute(w, data)

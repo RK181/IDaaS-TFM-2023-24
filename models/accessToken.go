@@ -27,7 +27,7 @@ func NewAccessToken(clientID, refreshTokenID, subject string, audience, scopes [
 		RefreshTokenID: refreshTokenID,
 		Subject:        subject,
 		Audience:       audience,
-		Expiration:     time.Now().Add(5 * time.Minute),
+		Expiration:     time.Now().Add(5 * time.Minute), // default expiration time is 5 minutes
 		Scopes:         scopes,
 	}
 }
@@ -45,17 +45,60 @@ func (a *AccessToken) SaveAccessToken() error {
 	a.TokenID = utils.GenUniqueIDv7()
 	a.Expiration = time.Now().Add(time.Duration(client.GetAccessTokenExpTime()) * time.Minute)
 
-	return saveAccessToken(a)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	accessTokenDB := accessTokenSerialize(a)
+	return db.Save(accessTokenDB)
 }
 
 // GetAccessToken
 func (a *AccessToken) GetAccessToken() error {
-	return getAccessToken(a)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var accessTokenDB accessTokenDB
+
+	if a.ID != 0 {
+		err = db.One("ID", a.ID, &accessTokenDB)
+	} else {
+		err = db.One("Token", a.TokenID, &accessTokenDB)
+	}
+
+	if err == nil {
+		*a = *accessTokenDeserialize(&accessTokenDB)
+	}
+	return err
 }
 
 // DeleteAccessToken deletes an access token
 func (a *AccessToken) DeleteAccessToken() error {
-	return deleteAccessToken(a)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	accessTokenDB := &AccessToken{
+		ID:      a.ID,
+		TokenID: a.TokenID,
+	}
+
+	if accessTokenDB.ID != 0 {
+		return db.DeleteStruct(accessTokenDB)
+	}
+	// Delete by token
+	err = db.One("Token", accessTokenDB.TokenID, &accessTokenDB)
+	if err != nil {
+		return err
+	}
+	return db.DeleteStruct(accessTokenDB)
 }
 
 func (a *AccessToken) DeleteAccessTokenByRefreshToken() error {

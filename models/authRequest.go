@@ -54,15 +54,59 @@ func NewAuthRequest(authReq *oidc.AuthRequest, userID string) *AuthRequest {
 }
 
 func (a *AuthRequest) SaveAuthRequest() error {
-	return saveAuthRequest(a)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	authRequestDB := authRequestSerialize(a)
+	return db.Save(authRequestDB)
 }
 
 func (a *AuthRequest) GetAuthRequest() error {
-	return getAuthRequest(a)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var authRequestDB authRequestDB
+
+	if a.ID != 0 {
+		err = db.One("ID", a.ID, &authRequestDB)
+	} else {
+		err = db.One("RequestID", a.RequestID, &authRequestDB)
+	}
+
+	if err == nil {
+		*a = *authRequestDeserialize(&authRequestDB)
+	}
+	return err
 }
 
 func (a *AuthRequest) DeleteAuthRequest() error {
-	return deleteAuthRequest(a)
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	authRequestDB := &authRequestDB{
+		ID:        a.ID,
+		RequestID: a.RequestID,
+	}
+
+	if authRequestDB.ID != 0 {
+		return db.DeleteStruct(authRequestDB)
+	}
+	// Delete by request id
+	err = db.One("RequestID", authRequestDB.RequestID, &authRequestDB)
+	if err != nil {
+		return err
+	}
+
+	return db.DeleteStruct(authRequestDB)
 }
 
 // Done implements op.AuthRequest.

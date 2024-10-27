@@ -28,44 +28,6 @@ type clientData struct {
 	RefreshTokenExpTime int
 }
 
-func saveClient(client *Client) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// serialize the client data
-	clientDB := clientSerialize(client)
-
-	return db.Save(clientDB)
-}
-
-func getClient(client *Client) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	clientDB := &clientDB{
-		ID:       client.id,
-		ClientID: client.clientID,
-	}
-
-	if clientDB.ID != 0 {
-		err = db.One("ID", clientDB.ID, clientDB)
-	} else {
-		err = db.One("ClientID", clientDB.ClientID, clientDB)
-	}
-
-	if err == nil {
-		client = clientDeserialize(clientDB)
-	}
-
-	return err
-}
-
 func getClientsByUser(user *User) ([]Client, error) {
 	db, err := dbConnect()
 	if err != nil {
@@ -95,31 +57,6 @@ func updateClient(client *Client) error {
 	clientDB := clientSerialize(client)
 
 	return db.Update(clientDB)
-}
-
-// DeleteClient deletes a client from the storage
-func deleteClient(client *Client) error {
-	db, err := dbConnect()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	clientDB := &clientDB{
-		ID:       client.id,
-		ClientID: client.clientID,
-	}
-
-	if clientDB.ID != 0 {
-		return db.DeleteStruct(clientDB)
-	}
-
-	// Delete by clientID (alternative key)
-	err = db.One("ClientID", client.clientID, clientDB)
-	if err != nil {
-		return err
-	}
-	return db.DeleteStruct(clientDB)
 }
 
 // clientSerialize serializes the client data for the database
