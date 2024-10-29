@@ -6,7 +6,7 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <form>
+                    <form method="post" action="/login">
                         <h1 class="h3 mb-3 fw-normal text-center">Login</h1>
                         <hr>
                         <input type="hidden" name="id" value="{{.ID}}">
@@ -25,6 +25,7 @@
                             <p class="text-center fw-bold mx-3 mb-0 text-muted">OR</p>
                         </div>
                         <a class="btn btn-outline-primary w-100" href="/register">Register</a>
+                    </form>
                 </div>
             </div>
         </div>

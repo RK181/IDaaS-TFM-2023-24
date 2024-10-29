@@ -7,8 +7,8 @@ import (
 	"io/fs"
 	"log"
 	"log/slog"
-	"module/globals"
-	"module/globals/constants"
+	"module/config/constants"
+	"module/config/templates"
 	"module/idp"
 	"module/models"
 	"module/webapp"
@@ -31,8 +31,8 @@ var (
 
 // LoadTemplates carga las plantillas en memoria
 func LoadTemplates() error {
-	if globals.Templates == nil {
-		globals.Templates = make(map[string]*template.Template)
+	if templates.Templates == nil {
+		templates.Templates = make(map[string]*template.Template)
 	}
 	tmplFiles, err := fs.ReadDir(files, templatesDir)
 	if err != nil {
@@ -46,7 +46,7 @@ func LoadTemplates() error {
 		if err != nil {
 			return err
 		}
-		globals.Templates[tmpl.Name()] = pt
+		templates.Templates[tmpl.Name()] = pt
 	}
 	return nil
 }
@@ -105,19 +105,19 @@ func loadRouter() *http.ServeMux {
 	// -----------------------------------------------
 	//router.HandleFunc("GET /favicon.ico", faviconHandler)
 	router.HandleFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
-		globals.ReturnView(w, r, "about.html", nil)
+		templates.ReturnView(w, r, "about.html", nil)
 	})
 	router.HandleFunc("GET /client/create", func(w http.ResponseWriter, r *http.Request) {
-		globals.ReturnView(w, r, "clientCreate.html", nil)
+		templates.ReturnView(w, r, "clientCreate.html", nil)
 	})
 	router.HandleFunc("GET /twofa", func(w http.ResponseWriter, r *http.Request) {
-		globals.ReturnView(w, r, "twoFA.html", nil)
+		templates.ReturnView(w, r, "twoFA.html", nil)
 	})
 	router.HandleFunc("GET /concent", func(w http.ResponseWriter, r *http.Request) {
-		globals.ReturnView(w, r, "concent.html", nil)
+		templates.ReturnView(w, r, "concent.html", nil)
 	})
 	router.HandleFunc("GET /verify", func(w http.ResponseWriter, r *http.Request) {
-		globals.ReturnView(w, r, "verify.html", nil)
+		templates.ReturnView(w, r, "verify.html", nil)
 	})
 	// -----------------------------------------------
 	// RUTAS QUE REQUIEREN INFORMACIÓN DE AUTENTICACIÓN

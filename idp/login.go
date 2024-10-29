@@ -3,8 +3,8 @@ package idp
 import (
 	"context"
 	"fmt"
-	"module/globals"
-	"module/globals/constants"
+	"module/config/constants"
+	"module/config/templates"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -55,7 +55,7 @@ func renderLogin(w http.ResponseWriter, r *http.Request, id string, err error, l
 		"ID":    id,
 	}
 
-	globals.ReturnView(w, r, "login.html", data)
+	templates.ReturnView(w, r, "login.html", data)
 }
 
 func (l *login) checkLoginHandler(w http.ResponseWriter, r *http.Request) {

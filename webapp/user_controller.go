@@ -1,7 +1,7 @@
 package webapp
 
 import (
-	"module/globals"
+	"module/config/templates"
 	"net/http"
 )
 
@@ -10,7 +10,7 @@ type UserController struct{}
 // GetProfile muestra el perfil de un usuario
 func (u *UserController) GetProfile(w http.ResponseWriter, r *http.Request) {
 
-	globals.ReturnView(w, r, "profile.html", nil)
+	templates.ReturnView(w, r, "profile.html", nil)
 }
 
 // GetUpateUser muestra el formulario para actualizar un usuario

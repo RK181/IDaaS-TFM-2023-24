@@ -1,7 +1,7 @@
 package models
 
 import (
-	"module/globals/constants"
+	"module/config/constants"
 	"module/utils"
 	"time"
 

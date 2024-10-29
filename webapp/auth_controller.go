@@ -1,7 +1,7 @@
 package webapp
 
 import (
-	"module/globals"
+	"module/config/templates"
 	"net/http"
 )
 
@@ -24,7 +24,7 @@ func (a *AuthController) GetEmailVerification(w http.ResponseWriter, r *http.Req
 
 // GetRegister muestra el formulario de registro de un usuario
 func (a *AuthController) GetRegister(w http.ResponseWriter, r *http.Request) {
-	globals.ReturnView(w, r, "register.html", nil)
+	templates.ReturnView(w, r, "register.html", nil)
 }
 
 // PostRegister registra un nuevo usuario

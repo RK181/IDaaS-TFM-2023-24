@@ -1,8 +1,8 @@
-package globals
+package templates
 
 import (
 	"html/template"
-	"module/globals/constants"
+	"module/config/constants"
 	"module/models"
 	"net/http"
 )
