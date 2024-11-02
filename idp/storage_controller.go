@@ -129,13 +129,8 @@ func (s *Storage) AuthRequestByCode(ctx context.Context, code string) (op.AuthRe
 // it will be called after the authentication has been successful and before redirecting the user agent to the redirect_uri
 // (in an authorization code flow)
 func (s *Storage) SaveAuthCode(ctx context.Context, id string, code string) error {
-
-	// for this example we'll just save the authRequestID to the code
-	authCode := models.AuthCode{
-		Code:          code,
-		AuthRequestID: id,
-	}
-	println("SaveAuthCode, id = ", id, ", code = ", code)
+	// Save the auth code relate
+	authCode := models.NewAuthCode(code, id)
 	return authCode.SaveAuthCode()
 }
 
@@ -149,6 +144,7 @@ func (s *Storage) DeleteAuthRequest(ctx context.Context, id string) error {
 	authRequest := models.AuthRequest{
 		RequestID: id,
 	}
+
 	err := authRequest.DeleteAuthRequest()
 	if err != nil {
 		return err
@@ -558,6 +554,7 @@ func (s *Storage) accessToken(applicationID, refreshTokenID, subject string, aud
 
 // setUserinfo sets the info based on the user, scopes and if necessary the clientID
 func (s *Storage) setUserinfo(ctx context.Context, userInfo *oidc.UserInfo, userID, clientID string, scopes []string) (err error) {
+
 	user := models.User{
 		AltID: userID,
 	}
@@ -565,36 +562,41 @@ func (s *Storage) setUserinfo(ctx context.Context, userInfo *oidc.UserInfo, user
 	if err != nil {
 		return fmt.Errorf("user not found")
 	}
+	//var info oidc.UserInfo
+	/*userInfo.Subject = user.AltID
+	userInfo.PreferredUsername = user.Username
+	userInfo.Name = user.FirstName + " " + user.LastName
+	userInfo.FamilyName = user.LastName
+	userInfo.GivenName = user.FirstName
+	userInfo.Email = user.Email
+	userInfo.EmailVerified = oidc.Bool(user.EmailVerified)*/
 
-	var info oidc.UserInfo
-	/*info.Subject = user.AltID
-	info.PreferredUsername = user.Username
-	info.Name = user.FirstName + " " + user.LastName
-	info.FamilyName = user.LastName
-	info.GivenName = user.FirstName
-	info.Email = user.Email
-	info.EmailVerified = oidc.Bool(user.EmailVerified)*/
-	for i := 0; i < len(scopes); i++ {
-		switch scopes[i] {
+	for _, scope := range scopes {
+		switch scope {
 		case oidc.ScopeOpenID:
-			info.Subject = user.AltID
+			userInfo.Subject = user.AltID
 		case oidc.ScopeEmail:
-			info.Email = user.Email
-			info.EmailVerified = oidc.Bool(user.EmailVerified)
+			userInfoEmail := oidc.UserInfoEmail{
+				Email:         user.Email,
+				EmailVerified: oidc.Bool(user.EmailVerified),
+			}
+			userInfo.UserInfoEmail = userInfoEmail
 		case oidc.ScopeProfile:
-			info.PreferredUsername = user.Username
-			info.Name = user.FirstName + " " + user.LastName
-			info.FamilyName = user.LastName
-			info.GivenName = user.FirstName
+			userInfoProfile := oidc.UserInfoProfile{
+				Name:              user.FirstName + " " + user.LastName,
+				GivenName:         user.FirstName,
+				FamilyName:        user.LastName,
+				PreferredUsername: user.Username,
+			}
+			userInfo.UserInfoProfile = userInfoProfile
 		case models.CustomScope:
 			// you can also have a custom scope and assert public or custom claims based on that
-			info.AppendClaims(models.CustomClaim, customClaim(clientID))
-			info.Email = user.Email
-			info.FamilyName = scopes[0]
-			info.AppendClaims("email", user.Email)
+			userInfo.AppendClaims(models.CustomClaim, customClaim(clientID))
+			userInfo.Email = user.Email
+			userInfo.FamilyName = scopes[0]
+			userInfo.AppendClaims("email", user.Email)
 		}
 	}
-	*userInfo = info
 
 	return nil
 }
