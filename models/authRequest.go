@@ -86,7 +86,7 @@ func (a *AuthRequest) GetAuthRequest() error {
 	return err
 }
 
-func (a *AuthRequest) DeleteAuthRequest() error {
+func (a AuthRequest) DeleteAuthRequest() error {
 	db, err := dbConnect()
 	if err != nil {
 		return err
@@ -103,6 +103,24 @@ func (a *AuthRequest) DeleteAuthRequest() error {
 	}
 	// Delete by request id
 	err = db.One("RequestID", authRequestDB.RequestID, authRequestDB)
+	if err != nil {
+		return err
+	}
+
+	return db.DeleteStruct(authRequestDB)
+}
+
+func (a *AuthRequest) DeleteAuthRequestByRequestID(requestID string) error {
+	db, err := dbConnect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var authRequestDB *authRequestDB
+
+	// Delete by request id
+	err = db.One("RequestID", requestID, authRequestDB)
 	if err != nil {
 		return err
 	}
