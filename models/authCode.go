@@ -8,6 +8,13 @@ type AuthCode struct {
 	AuthRequestID string // Auth Request ID
 }
 
+func NewAuthCode(code string, authRequestID string) *AuthCode {
+	return &AuthCode{
+		Code:          code,
+		AuthRequestID: authRequestID,
+	}
+}
+
 // saveAuthCode creates an auth code
 func (a *AuthCode) SaveAuthCode() error {
 	db, err := dbConnect()
