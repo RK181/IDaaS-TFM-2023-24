@@ -3,6 +3,7 @@ package idp
 import (
 	"context"
 	"fmt"
+	"log"
 	"module/config/constants"
 	"module/config/templates"
 	"net/http"
@@ -50,6 +51,7 @@ func (l *login) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 func renderLogin(w http.ResponseWriter, r *http.Request, id string, err error, l *login) {
 
+	fmt.Printf("id: %s, err: %s\n", id, err)
 	data := map[string]interface{}{
 		"Error": err,
 		"ID":    id,
@@ -66,11 +68,16 @@ func (l *login) checkLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	username := r.FormValue("username")
 	password := r.FormValue("password")
+	log.Printf("POST /login: username: %s, password: %s", username, password)
 	id := r.FormValue("id")
 	err = l.authenticate.CheckUsernamePassword(username, password, id)
 	if err != nil {
+		log.Printf("login error for user %s, error %s", username, err)
+
 		renderLogin(w, r, id, err, l)
 		return
 	}
+	log.Printf("login successful for user %s, id %s", username, id)
+
 	http.Redirect(w, r, l.callback(r.Context(), id), http.StatusFound)
 }

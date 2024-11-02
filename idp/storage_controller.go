@@ -16,54 +16,14 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 )
 
+// Explicitly declare that Storage implements op.Storage and authenticate interfaces of the login.
 var (
-	_ StorageOP = &Storage{}
-	//_ authenticate = &Storage{}
+	_ StorageOP    = &Storage{}
+	_ authenticate = &Storage{}
 )
 
-// storage implements the op.Storage interface
-// typically you would implement this as a layer on top of your database
-// for simplicity this example keeps everything in-memory
 type Storage struct {
 	signingKey signingKey
-}
-
-type signingKey struct {
-	id        string
-	algorithm jose.SignatureAlgorithm
-	key       *rsa.PrivateKey
-}
-
-func (s *signingKey) SignatureAlgorithm() jose.SignatureAlgorithm {
-	return s.algorithm
-}
-
-func (s *signingKey) Key() any {
-	return s.key
-}
-
-func (s *signingKey) ID() string {
-	return s.id
-}
-
-type publicKey struct {
-	signingKey
-}
-
-func (s *publicKey) ID() string {
-	return s.id
-}
-
-func (s *publicKey) Algorithm() jose.SignatureAlgorithm {
-	return s.algorithm
-}
-
-func (s *publicKey) Use() string {
-	return "sig"
-}
-
-func (s *publicKey) Key() any {
-	return &s.key.PublicKey
 }
 
 func (s *Storage) GetScopes(id string) []string {
@@ -90,7 +50,6 @@ func NewStorage() *Storage {
 
 // CheckUsernamePassword implements the `authenticate` interface of the login
 func (s *Storage) CheckUsernamePassword(username, password, id string) error {
-
 	request := models.AuthRequest{
 		RequestID: id,
 	}
@@ -108,6 +67,7 @@ func (s *Storage) CheckUsernamePassword(username, password, id string) error {
 	if utils.CheckArgon2Salt(utils.Hash512([]byte(password)), user.Salt, user.Password) {
 		request.UserID = user.AltID
 		request.AuthDone = true
+		request.SaveAuthRequest()
 		return nil
 	}
 	return fmt.Errorf("username or password wrong")
@@ -130,7 +90,7 @@ func (s *Storage) CreateAuthRequest(ctx context.Context, authReq *oidc.AuthReque
 		return nil, err
 	}
 
-	// finally, return the request (which implements the AuthRequest interface of the OP
+	// finally, return the request (which implements the AuthRequest interface of the OP)
 	return request, nil
 }
 
@@ -140,6 +100,7 @@ func (s *Storage) AuthRequestByID(ctx context.Context, id string) (op.AuthReques
 	request := models.AuthRequest{
 		RequestID: id,
 	}
+
 	err := request.GetAuthRequest()
 	if err != nil {
 		return nil, fmt.Errorf("request not found")
@@ -151,6 +112,7 @@ func (s *Storage) AuthRequestByID(ctx context.Context, id string) (op.AuthReques
 // AuthRequestByCode implements the op.Storage interface
 // it will be called after parsing and validation of the token request (in an authorization code flow)
 func (s *Storage) AuthRequestByCode(ctx context.Context, code string) (op.AuthRequest, error) {
+
 	// for this example we read the id by code and then get the request by id
 	aurthCode := models.AuthCode{
 		Code: code,
@@ -167,12 +129,13 @@ func (s *Storage) AuthRequestByCode(ctx context.Context, code string) (op.AuthRe
 // it will be called after the authentication has been successful and before redirecting the user agent to the redirect_uri
 // (in an authorization code flow)
 func (s *Storage) SaveAuthCode(ctx context.Context, id string, code string) error {
+
 	// for this example we'll just save the authRequestID to the code
 	authCode := models.AuthCode{
 		Code:          code,
 		AuthRequestID: id,
 	}
-
+	println("SaveAuthCode, id = ", id, ", code = ", code)
 	return authCode.SaveAuthCode()
 }
 
@@ -181,6 +144,7 @@ func (s *Storage) SaveAuthCode(ctx context.Context, id string, code string) erro
 // - authentication request (in an implicit flow)
 // - token request (in an authorization code flow)
 func (s *Storage) DeleteAuthRequest(ctx context.Context, id string) error {
+
 	// you can simply delete all reference to the auth request
 	authRequest := models.AuthRequest{
 		RequestID: id,
@@ -199,6 +163,7 @@ func (s *Storage) DeleteAuthRequest(ctx context.Context, id string) error {
 // CreateAccessToken implements the op.Storage interface
 // it will be called for all requests able to return an access token (Authorization Code Flow, Implicit Flow, JWT Profile, ...)
 func (s *Storage) CreateAccessToken(ctx context.Context, request op.TokenRequest) (string, time.Time, error) {
+
 	var applicationID string
 	switch req := request.(type) {
 	case *models.AuthRequest:
@@ -212,6 +177,7 @@ func (s *Storage) CreateAccessToken(ctx context.Context, request op.TokenRequest
 	if err != nil {
 		return "", time.Time{}, err
 	}
+
 	return accesToken.TokenID, accesToken.Expiration, nil
 }
 
@@ -234,9 +200,11 @@ func (s *Storage) CreateAccessAndRefreshTokens(ctx context.Context, request op.T
 			return "", "", time.Time{}, err
 		}
 		refreshToken, err := s.createRefreshToken(accessToken, amr, authTime)
+
 		if err != nil {
 			return "", "", time.Time{}, err
 		}
+
 		return accessToken.TokenID, refreshToken, accessToken.Expiration, nil
 	}
 
@@ -250,10 +218,12 @@ func (s *Storage) CreateAccessAndRefreshTokens(ctx context.Context, request op.T
 	if err != nil {
 		return "", "", time.Time{}, err
 	}
+
 	return accessToken.TokenID, refreshToken, accessToken.Expiration, nil
 }
 
 func (s *Storage) exchangeRefreshToken(ctx context.Context, request op.TokenExchangeRequest) (accessTokenID string, newRefreshToken string, expiration time.Time, err error) {
+
 	applicationID := request.GetClientID()
 	authTime := request.GetAuthTime()
 
@@ -297,6 +267,7 @@ func (s *Storage) TerminateSession(ctx context.Context, userID string, clientID 
 // GetRefreshTokenInfo looks up a refresh token and returns the token id and user id.
 // If given something that is not a refresh token, it must return error.
 func (s *Storage) GetRefreshTokenInfo(ctx context.Context, clientID string, token string) (userID string, tokenID string, err error) {
+
 	refreshToken := models.RefreshToken{
 		Token: token,
 	}
@@ -427,10 +398,10 @@ func (s *Storage) SetUserinfoFromRequest(ctx context.Context, userinfo *oidc.Use
 // SetUserinfoFromToken implements the op.Storage interface
 // it will be called for the userinfo endpoint, so we read the token and pass the information from that to the private function
 func (s *Storage) SetUserinfoFromToken(ctx context.Context, userinfo *oidc.UserInfo, tokenID, subject, origin string) error {
-
 	accesToken := models.AccessToken{
 		TokenID: tokenID,
 	}
+
 	err := accesToken.GetAccessToken()
 	if err != nil {
 		return fmt.Errorf("token is invalid or has expired")
@@ -442,6 +413,7 @@ func (s *Storage) SetUserinfoFromToken(ctx context.Context, userinfo *oidc.UserI
 	/*if origin != "" {
 
 	}*/
+
 	return s.setUserinfo(ctx, userinfo, accesToken.Subject, accesToken.ClientID, accesToken.Scopes)
 }
 
@@ -575,7 +547,6 @@ func (s *Storage) renewRefreshToken(currentRefreshToken string) (string, string,
 
 // accessToken will store an access_token in-memory based on the provided information
 func (s *Storage) accessToken(applicationID, refreshTokenID, subject string, audience, scopes []string) (*models.AccessToken, error) {
-
 	accesToken := models.NewAccessToken(applicationID, refreshTokenID, subject, audience, scopes)
 	err := accesToken.SaveAccessToken()
 	if err != nil {
@@ -587,7 +558,6 @@ func (s *Storage) accessToken(applicationID, refreshTokenID, subject string, aud
 
 // setUserinfo sets the info based on the user, scopes and if necessary the clientID
 func (s *Storage) setUserinfo(ctx context.Context, userInfo *oidc.UserInfo, userID, clientID string, scopes []string) (err error) {
-
 	user := models.User{
 		AltID: userID,
 	}
@@ -631,11 +601,11 @@ func (s *Storage) setUserinfo(ctx context.Context, userInfo *oidc.UserInfo, user
 
 // getInfoFromRequest returns the clientID, authTime and amr depending on the op.TokenRequest type / implementation
 func getInfoFromRequest(req op.TokenRequest) (clientID string, authTime time.Time, amr []string) {
-	authReq, ok := req.(*models.AuthRequest) // Code Flow (with scope offline_access)
+	authReq, ok := req.(models.AuthRequest) // Code Flow (with scope offline_access)
 	if ok {
 		return authReq.ClientID, authReq.AuthTime, authReq.GetAMR()
 	}
-	refreshReq, ok := req.(*models.RefreshTokenRequest) // Refresh Token Request
+	refreshReq, ok := req.(models.RefreshTokenRequest) // Refresh Token Request
 	if ok {
 		return refreshReq.ClientID, refreshReq.AuthTime, refreshReq.AMR
 	}

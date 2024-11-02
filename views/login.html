@@ -6,10 +6,10 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <form method="post" action="/login">
+                    <form method="post" action="/login/username">
                         <h1 class="h3 mb-3 fw-normal text-center">Login</h1>
                         <hr>
-                        <input type="hidden" name="id" value="{{.ID}}">
+                        <input type="hidden" id="id" name="id" value="{{.ID}}">
                         <div class="form-floating mb-3">
                           <input type="username" class="form-control" id="username" name="username" placeholder="name@example.com">
                           <label for="floatingInput">Username</label>

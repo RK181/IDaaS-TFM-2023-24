@@ -7,6 +7,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 )
 
+// Explicitly declare that AuthRequest implements op.AuthRequest.
 var (
 	_ op.AuthRequest = &AuthRequest{}
 )
@@ -101,7 +102,7 @@ func (a *AuthRequest) DeleteAuthRequest() error {
 		return db.DeleteStruct(authRequestDB)
 	}
 	// Delete by request id
-	err = db.One("RequestID", authRequestDB.RequestID, &authRequestDB)
+	err = db.One("RequestID", authRequestDB.RequestID, authRequestDB)
 	if err != nil {
 		return err
 	}

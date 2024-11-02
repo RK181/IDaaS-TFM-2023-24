@@ -106,30 +106,30 @@ type RefreshTokenRequest struct {
 	*RefreshToken
 }
 
-func (r *RefreshTokenRequest) GetAMR() []string {
+func (r RefreshTokenRequest) GetAMR() []string {
 	return r.AMR
 }
 
-func (r *RefreshTokenRequest) GetAudience() []string {
+func (r RefreshTokenRequest) GetAudience() []string {
 	return r.Audience
 }
 
-func (r *RefreshTokenRequest) GetAuthTime() time.Time {
+func (r RefreshTokenRequest) GetAuthTime() time.Time {
 	return r.AuthTime
 }
 
-func (r *RefreshTokenRequest) GetClientID() string {
+func (r RefreshTokenRequest) GetClientID() string {
 	return r.ClientID
 }
 
-func (r *RefreshTokenRequest) GetScopes() []string {
+func (r RefreshTokenRequest) GetScopes() []string {
 	return r.Scopes
 }
 
-func (r *RefreshTokenRequest) GetSubject() string {
+func (r RefreshTokenRequest) GetSubject() string {
 	return r.UserID
 }
 
-func (r *RefreshTokenRequest) SetCurrentScopes(scopes []string) {
+func (r RefreshTokenRequest) SetCurrentScopes(scopes []string) {
 	r.Scopes = scopes
 }

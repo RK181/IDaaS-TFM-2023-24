@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"log"
 	"log/slog"
-	"module/models"
 	"module/utils"
 	"net/http"
 	"sync/atomic"
@@ -21,7 +20,7 @@ const (
 )
 
 func init() {
-	client, err := models.CreateNativeClient(1, 5, 5, "native", []string{})
+	/*client, err := models.CreateNativeClient(1, 5, 5, "native", []string{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,16 +29,17 @@ func init() {
 		log.Fatal(err)
 	}
 	log.Println(client.GetID())
-
+	*/
 	// create a user
 	/*user := models.NewUser("user", "first", "last", "asd", "user@")
-	err = user.SaveUser()
+	err := user.SaveUser()
 	if err != nil {
 		log.Fatal(err)
 	}*/
 
 }
 
+// StorageOP is a combination of the op.Storage interface and the authenticate interface
 type StorageOP interface {
 	op.Storage
 	authenticate
@@ -49,10 +49,9 @@ type StorageOP interface {
 var counter atomic.Int64
 
 // SetupServer creates an OIDC server with Issuer=http://localhost:<port>
-//
-// Use one of the pre-made clients in storage/clients.go or register a new one.
 func SetupServer(issuer string, storage StorageOP, logger *slog.Logger, wrapServer bool, extraOptions ...op.Option) chi.Router {
 
+	// generate a random key for the encryption of the tokens
 	key := sha256.Sum256(utils.GenRandByteSlice(32))
 
 	router := chi.NewRouter()
@@ -69,7 +68,7 @@ func SetupServer(issuer string, storage StorageOP, logger *slog.Logger, wrapServ
 		// no need to check/log error, this will be handled by the middleware.
 	})
 
-	// creation of the OpenIDProvider with the just created in-memory Storage
+	// creation of the OpenIDProvider
 	provider, err := newOP(storage, issuer, key, logger, extraOptions...)
 	if err != nil {
 		log.Fatal(err)

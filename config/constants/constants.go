@@ -10,3 +10,14 @@ const (
 	BASE_URL          string     = "http://localhost" // URL base del servidor
 	QUERY_AUTH_REQ_ID string     = "authRequestID"    // Clave para almacenar el id de la solicitud de autenticación en el contexto
 )
+
+/*
+type Config struct {
+	auth_user         contextKey
+	auth_user_token   string
+	callback_uri      string
+	port              string
+	base_url          string
+	query_auth_req_id string
+}
+*/

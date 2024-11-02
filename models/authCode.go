@@ -3,7 +3,7 @@ package models
 import "github.com/asdine/storm/v3/q"
 
 type AuthCode struct {
-	ID            string `storm:"id,increment"` // auth code id
+	ID            int    `storm:"id,increment"` // auth code id
 	Code          string `storm:"unique"`       // auth code
 	AuthRequestID string // Auth Request ID
 }

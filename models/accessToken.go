@@ -1,11 +1,21 @@
 package models
 
 import (
+	"log"
 	"module/utils"
 	"time"
 
 	"github.com/asdine/storm/v3/q"
 )
+
+type AccessTokenI interface {
+	SaveAccessToken() error
+	GetAccessToken() error
+	DeleteAccessToken() error
+	DeleteAccessTokenByRefreshToken() error
+}
+
+var _ AccessTokenI = &AccessToken{}
 
 // AccessToken is a token that can be used to access resources
 type AccessToken struct {
@@ -38,6 +48,7 @@ func (a *AccessToken) SaveAccessToken() error {
 	client.SetID(a.ClientID)
 	err := client.GetClient()
 	if err != nil {
+		log.Println("Error getting client: ", err)
 		return err
 	}
 
@@ -68,7 +79,7 @@ func (a *AccessToken) GetAccessToken() error {
 	if a.ID != 0 {
 		err = db.One("ID", a.ID, &accessTokenDB)
 	} else {
-		err = db.One("Token", a.TokenID, &accessTokenDB)
+		err = db.One("TokenID", a.TokenID, &accessTokenDB)
 	}
 
 	if err == nil {
@@ -94,7 +105,7 @@ func (a *AccessToken) DeleteAccessToken() error {
 		return db.DeleteStruct(accessTokenDB)
 	}
 	// Delete by token
-	err = db.One("Token", accessTokenDB.TokenID, &accessTokenDB)
+	err = db.One("Token", accessTokenDB.TokenID, accessTokenDB)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"module/config/constants"
 	"module/utils"
 	"time"
@@ -102,6 +103,7 @@ func (c *Client) GetClient() error {
 	}
 
 	if clientDB.ID != 0 {
+		log.Println("GetClient by ID")
 		err = db.One("ID", clientDB.ID, clientDB)
 	} else {
 		err = db.One("ClientID", clientDB.ClientID, clientDB)
