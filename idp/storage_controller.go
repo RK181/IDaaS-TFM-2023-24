@@ -562,14 +562,6 @@ func (s *Storage) setUserinfo(ctx context.Context, userInfo *oidc.UserInfo, user
 	if err != nil {
 		return fmt.Errorf("user not found")
 	}
-	//var info oidc.UserInfo
-	/*userInfo.Subject = user.AltID
-	userInfo.PreferredUsername = user.Username
-	userInfo.Name = user.FirstName + " " + user.LastName
-	userInfo.FamilyName = user.LastName
-	userInfo.GivenName = user.FirstName
-	userInfo.Email = user.Email
-	userInfo.EmailVerified = oidc.Bool(user.EmailVerified)*/
 
 	for _, scope := range scopes {
 		switch scope {
@@ -597,7 +589,6 @@ func (s *Storage) setUserinfo(ctx context.Context, userInfo *oidc.UserInfo, user
 			userInfo.AppendClaims("email", user.Email)
 		}
 	}
-
 	return nil
 }
 
