@@ -458,7 +458,6 @@ func (s *Storage) getPrivateClaimsFromScopes(ctx context.Context, userID, client
 		switch scope {
 		case models.CustomScope:
 			claims = appendClaim(claims, models.CustomClaim, customClaim(clientID))
-			claims = appendClaim(claims, "asd", customClaim(clientID))
 		}
 	}
 	return claims, nil
@@ -607,7 +606,7 @@ func getInfoFromRequest(req op.TokenRequest) (clientID string, authTime time.Tim
 
 // customClaim demonstrates how to return custom claims based on provided information
 func customClaim(clientID string) string {
-	return "ess"
+	return "not implemented"
 	/*map[string]any{
 		"client": clientID,
 		"other":  "stuff",
