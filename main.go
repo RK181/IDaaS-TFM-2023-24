@@ -11,7 +11,6 @@ import (
 	"module/config/templates"
 	"module/idp"
 	"module/models"
-	"module/webapp"
 	"net/http"
 	"os"
 )
@@ -87,51 +86,4 @@ func main() {
 	// Iniciamos el servidor
 	log.Fatal(server.ListenAndServe())
 
-}
-
-func loadRouter() *http.ServeMux {
-	// Creamos los routers
-	router := http.NewServeMux()
-
-	// Obtenemos el controlador de usuario
-	userController := &webapp.UserController{}
-	authController := &webapp.AuthController{}
-	loginController := &idp.LoginController{}
-	// Obtenemos el controlador de publicaciones
-	//clientController := &webapp.ClientController{}
-
-	// -----------------------------------------------
-	// RUTAS PÚBLICAS
-	// -----------------------------------------------
-	//router.HandleFunc("GET /favicon.ico", faviconHandler)
-	router.HandleFunc("GET /about", func(w http.ResponseWriter, r *http.Request) {
-		templates.ReturnView(w, r, "about.html", nil)
-	})
-	router.HandleFunc("GET /client/create", func(w http.ResponseWriter, r *http.Request) {
-		templates.ReturnView(w, r, "clientCreate.html", nil)
-	})
-	router.HandleFunc("GET /twofa", func(w http.ResponseWriter, r *http.Request) {
-		templates.ReturnView(w, r, "twoFA.html", nil)
-	})
-	router.HandleFunc("GET /concent", func(w http.ResponseWriter, r *http.Request) {
-		templates.ReturnView(w, r, "concent.html", nil)
-	})
-	router.HandleFunc("GET /verify", func(w http.ResponseWriter, r *http.Request) {
-		templates.ReturnView(w, r, "verify.html", nil)
-	})
-	// -----------------------------------------------
-	// RUTAS QUE REQUIEREN INFORMACIÓN DE AUTENTICACIÓN
-	// -----------------------------------------------
-
-	router.HandleFunc("GET /register", authController.GetRegister)
-	router.HandleFunc("GET /login", loginController.GetLogin)
-
-	router.HandleFunc("GET /profile", userController.GetProfile)
-
-	//router.HandleFunc("GET /profile/update", userController.GetUpdateUser)
-
-	//router.HandleFunc("GET /auth/email", authController.GetEmailVerification)
-	//router.HandleFunc("GET /
-
-	return router
 }
